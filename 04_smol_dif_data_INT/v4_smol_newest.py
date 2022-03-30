@@ -3,7 +3,7 @@ import sys
 import torch
 import torch.nn as nn
 import numpy as np
-import Big_gurobi_LP as gb
+import v4_smol_gurobi_INT as gb
 import logging
 import time
 import os
@@ -25,28 +25,28 @@ timer_output_Action = 0
 start = time.time()
 
 # Map
-iter_ = 200
-Small_map_number = 2161
-Big_map_number = 1203
-Total_map_number = 3364
+iter_ = 10
+Small_map_number = 1257
+Big_map_number = 808
+Total_map_number = 2065
 
 # Hyper Parameters
 # The parameter interfere the training time
-BATCH_SIZE = 64
-MEMORY_CAPACITY = 200
+BATCH_SIZE = 16
+MEMORY_CAPACITY = 32
 GAME_STEP_NUM = iter_ - 1  # (for the zero)
-EPOCHS = 1000
+EPOCHS = 3000
 LR = 0.01  # learning rate
 EPSILON = 0.90  # greedy policy
-GAMMA = 1.0  # reward discount
 decay_rate = 0.8
+GAMMA = 1.0  # reward discount
 TARGET_REPLACE_ITER = 30  # target update frequency
 # Network parameters
-input_dim = Total_map_number
+input_dim = Total_map_number   # Q() = S x A
 hidden_dim = 16
 output_dim = 1
-B_size = 180
-D_size = 36
+B_size = 230
+D_size = 46
 Reward_hit = -10.0
 Reward_fetch = -18.0
 Game_step = 0
@@ -123,6 +123,12 @@ def get_Weight_and_Bias(model):
         for j in range(hidden_dim):
             fc2_weight[j] = i[j]
     fc2_bias = fc2_bias_temp[0]
+
+
+    print("fc1_weight:\n{:.2f}".format(fc1_weight), file=py_out)
+    print("fc1_bias\n{:.2f}".format(fc1_bias) , file=py_out)
+    print("fc2_weight:\n{:.2f}".format(fc2_weight), file=py_out)
+    print("fc2_bias:\n{:.2f}".format(fc2_bias), file=py_out)
 
     return fc1_weight, fc1_bias, fc2_weight, fc2_bias
 
@@ -260,11 +266,10 @@ class DQN(object):
                                     , map_=map_)
             action, V_ = gurobi_func.MIP_formulation()
 
-            if self.learn_step_counter % 50:
-                print("Action ", " :[ ", end="", file=py_out)
-                for i in action:
-                    print(i, " ", end="", file=py_out)
-                print("]\n", end="", file=py_out)
+            print("Action ", " :[ ", end="", file=py_out)
+            for i in action:
+                print(i, " ", end="", file=py_out)
+            print("]\n", end="", file=py_out)
 
         else:  # random
             action = generate_rand_action(observation_state)
@@ -325,8 +330,8 @@ class DQN(object):
 
         q_target = b_r + GAMMA * q_next
 
-        # print("q_eval  ", q_eval, file=py_out)
-        # print("q_next  ", q_next, file=py_out)
+        print("q_eval  ", q_eval, file=py_out)
+        print("q_next  ", q_next, file=py_out)
         # print("q_target  ", q_target, file=py_out)
 
         loss = self.loss_func(q_eval, q_target)
@@ -342,7 +347,7 @@ class DQN(object):
 
         return loss.item()
 
-
+# Won't use
 def GetEvalS_(s_, eval_net, vec_num_in, g_step):
     fc1_weight, fc1_bias, fc2_weight, fc2_bias = get_Weight_and_Bias(eval_net)
     V_s = []

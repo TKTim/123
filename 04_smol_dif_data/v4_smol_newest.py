@@ -3,7 +3,7 @@ import sys
 import torch
 import torch.nn as nn
 import numpy as np
-import v4_smol_gurobi_INT as gb
+import v4_smol_gurobi_LP as gb
 import logging
 import time
 import os
