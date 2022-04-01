@@ -17,6 +17,51 @@ N_ACTIONS = env.action_space.n
 N_STATES = env.observation_space.shape[0]
 ENV_A_SHAPE = 0 if isinstance(env.action_space.sample(), int) else env.action_space.sample().shape     # to confirm the shape
 
+def get_Weight_and_Bias(model):
+    num = 0
+    for par in model.parameters():
+        if num == 0:
+            fc1_weight = par.cpu().detach().numpy().tolist()
+        elif num == 1:
+            fc1_bias = par.cpu().detach().numpy().tolist()
+        elif num == 2:
+            fc2_weight_temp = par.cpu().detach().numpy().tolist()
+        else:
+            fc2_bias_temp = par.cpu().detach().numpy().tolist()
+        num += 1
+
+    print("fc1_weight:", fc1_weight)
+    print("fc1_bias:", fc1_bias)
+
+    print("fc2_weight_temp:", fc2_weight_temp)
+    print("fc2_bias_temp:", fc2_bias_temp)
+    # 0: fc1.weight: torch.Size([16, 794])
+    # 1: fc1.bias: torch.Size([16])
+    # 2: fc2.weight: torch.Size([1, 16])
+    # 3: fc2.bias: torch.Size([1])
+    '''
+    fc2_weight = [[0.0 for _ in range(50)] in range(2)]
+    for i in range(2):
+        for j in range(50):
+            fc2_weight[j] = fc2_weight_temp[i][j]
+
+    fc2_bias = [0.0 for _ in range(N_ACTIONS)]
+    for i in range(N_ACTIONS):
+        fc2_bias[i] = fc2_bias_temp[i]
+
+    print("fc2_weight:", fc2_weight)
+    print("fc2_bias:", fc2_bias)
+    '''
+
+    '''
+    print("fc1_weight:", fc1_weight, file=py_out)
+    print("fc1_bias:", fc1_bias, file=py_out)
+
+    print("fc2_weight:", fc2_weight, file=py_out)
+    print("fc2_bias:", fc2_bias, file=py_out)
+    '''
+
+    return fc1_weight, fc1_bias, fc2_weight_temp, fc2_bias_temp
 
 class Net(nn.Module):
     def __init__(self, ):
@@ -78,10 +123,13 @@ class DQN(object):
         b_r = torch.FloatTensor(b_memory[:, N_STATES+1:N_STATES+2])
         b_s_ = torch.FloatTensor(b_memory[:, -N_STATES:])
 
-        print("b_s:\n", b_s)
+        #print("b_s:\n", b_s)
         # print("b_a:\n", b_a, file=py_out)
-        print("b_r:\n", b_r)
-        print("b_s_:\n", b_s_)
+        #print("b_r:\n", b_r)
+        #print("b_s_:\n", b_s_)
+
+        if self.learn_step_counter % 20 == 0:
+            get_Weight_and_Bias(self.eval_net)
 
         # q_eval w.r.t the action in experience
         q_eval = self.eval_net(b_s).gather(1, b_a)  # shape (batch, 1), originally action
@@ -89,13 +137,9 @@ class DQN(object):
         # If you don't use .detach(), target network will update every time.(backpropagation)
         q_target = b_r + GAMMA * q_next.max(1)[0].view(BATCH_SIZE, 1)   # shape (batch, 1)
 
-        print("q_eval  ", q_eval)
-        print("q_next  ", q_next)
-        print("q_target  ", q_target)
-
         loss = self.loss_func(q_eval, q_target)
 
-        print("loss  ", loss)
+        #print("loss  ", loss)
         '''
         print("q_eval  ", q_eval)
         print("q_next  ", q_next)
@@ -110,7 +154,7 @@ dqn = DQN()
 
 print('\nCollecting experience...')
 # MEMORY_CAPACITY time of collecting exp,
-for i_episode in range(400):
+for i_episode in range(100):
     s = env.reset()
     ep_r = 0
     while True:
@@ -139,9 +183,5 @@ for i_episode in range(400):
             break
         s = s_
 
-env.close()
 
-torch.save(dqn.eval_net.state_dict(), 'eval_network.pt')
-print('Save eval_network complete.')
-torch.save(dqn.target_net.state_dict(), 'target_network.pt')
-print('Save target_network complete.')
+env.close()

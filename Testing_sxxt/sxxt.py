@@ -5,24 +5,20 @@ import torch as t
 import torch.nn as nn
 import operator as op
 
-loss_func = nn.MSELoss()
+lr = 0.5
+episode = 10
+lr = lr / (episode+1) ** 0.5
+print(lr)
 
-input = [[1.0], [2.0]]
-input = t.FloatTensor(input)
-input2 = [[1.0], [2.1]]
-input2 = t.FloatTensor(input2)
 
-loss = loss_func(input, input2)
-print(loss)
 
-input3 = [1.0, 2.0]
-input3 = t.FloatTensor(input3)
-input4 = [1.0, 2.1]
-input4 = t.FloatTensor(input4)
 
-loss = loss_func(input3, input4)
-print(loss)
 
+EPSILON = 0.9
+decay_rate = 0.8
+for i in range(5):
+    EPSILON = 1 - (1 - EPSILON)*decay_rate
+print("EPSILON", EPSILON)
 
 
 
