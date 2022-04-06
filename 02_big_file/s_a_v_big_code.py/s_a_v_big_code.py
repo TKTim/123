@@ -591,7 +591,7 @@ for i_episode in range(EPOCHS):
     while True:
         # print(s)
         # Choose a random action on state s.
-        print("Game_step: ", Game_step, file=py_out)
+        # print("Game_step: ", Game_step, file=py_out)
         a = dqn.choose_action(s)  # time_round += 1
         # take action
         # done: The end.
@@ -600,7 +600,7 @@ for i_episode in range(EPOCHS):
 
         g_s = Game_step
         s_, r, done = env.step(a)  # have to after anything about Game_step
-        print("r: ", r, file=py_out)
+        # print("r: ", r, file=py_out)
         dqn.store_transition(s, a, r, s_, g_s)
 
         # ep_r: total reward
@@ -612,6 +612,7 @@ for i_episode in range(EPOCHS):
             if done:
                 log_.info('Ep: %s'  '| Ep_r: %f', i_episode, round(ep_r, 2))
         if done:
+            print("epr: ", ep_r, file=py_out)
             break
         s = s_
 

@@ -1,6 +1,7 @@
 import sys
 import torch
 import torch.nn as nn
+import torch.nn.init
 import numpy as np
 import gurobi_sav as gb
 import logging
@@ -485,7 +486,7 @@ log_ = log_creater("log_file")
 
 # GPU
 if torch.cuda.is_available():
-    cuda0 = torch.device('cuda:1')
+    cuda0 = torch.device('cuda:0')
     print(cuda0, "name: ", torch.cuda.get_device_name(0))
 
 '''

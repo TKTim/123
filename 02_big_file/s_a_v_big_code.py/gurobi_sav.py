@@ -90,8 +90,7 @@ class Gurobi:
         # cons. Miss,hit  Miss,fetch
         for i in range(self.Small_number):
             try:
-                m.addConstr(hit[i] == (1 - s_[i]) * s_[self.Small_number + self.map_[i]],
-                            "hit_")  # (m is not) and (M is) <hit>
+                m.addConstr(hit[i] == (1 - s_[i]) * s_[self.Small_number + self.map_[i]], "hit_")  # (m is not) and (M is) <hit>
                 # m.addConstr(hit[i] <= 1-s_[i], "hit_s")
                 # m.addConstr(hit[i] >= s_[self.Small_number + self.map_[i]] - s_[i], "hit_b")
 

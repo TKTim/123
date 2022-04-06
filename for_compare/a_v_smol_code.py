@@ -8,6 +8,7 @@ import os
 import signal
 import time
 import random
+import torch.backends.cudnn
 # lock on seed
 seed = 123
 torch.manual_seed(seed)
@@ -39,11 +40,11 @@ D_size = 3
 
 # Hyper Parameters
 # The parameter interfere the training time
-BATCH_SIZE = 32
-MEMORY_CAPACITY = 224
+BATCH_SIZE = 64
+MEMORY_CAPACITY = 320
 GAME_STEP_NUM = iter_ - 2  # (for the zero)
 EPOCHS = 5000
-LR = 0.001  # learning rate
+LR = 0.01  # learning rate
 EPSILON = 0.8  # greedy policy
 decay_rate = 0.8
 GAMMA = 0.8  # reward discount
@@ -351,7 +352,7 @@ class DQN(object):
         q_next = self.target_net(b_s_).detach()  # detach from graph, don't backpropagation
         '''
         # Data preprocessing
-        x_ = b_s_.clone()
+        x_ = b_s_.clone()  # A bar
         for i in range(len(x_)):
             for j in range(N_S_A):
                 if x_[i][j] <= 0.5:
@@ -365,7 +366,7 @@ class DQN(object):
 
         vec_batch_ = torch.tensor(vec_batch_, dtype=torch.float32).to(device=cuda0)
 
-        In_q_eval = torch.cat((x_, vec_batch_), 1)  # a, V
+        In_q_eval = torch.cat((x_, vec_batch_), 1)  # A bar, V
         '''
         test_q = In_q_eval.cpu().detach().numpy().tolist()
         print("In_q_eval \n", " :[ ", end="", file=py_out)
