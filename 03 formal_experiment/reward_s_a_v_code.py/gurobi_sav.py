@@ -69,12 +69,12 @@ class Gurobi:
 
             m.addConstr(y_h[i] >= quicksum(self.f1_w[i][j] * (1 - s_[j]) for j in range(self.Total_map)) +
                         quicksum(self.f1_w[i][j + self.Total_map] * self.vec_num[j] for j in range(self.Small_number)) +
-                        quicksum(self.f1_w[i][j + self.t_minus_number] * (1 - self.t_minus_s_[j]) for j in range(self.Total_map)) +
+                        quicksum(self.f1_w[i][j + self.t_minus_number] * self.t_minus_s_[j] for j in range(self.Total_map)) +
                         self.f1_b[i], "c1_")
 
             m.addConstr(y_h[i] <= quicksum(self.f1_w[i][j] * (1 - s_[j]) for j in range(self.Total_map)) +
                         quicksum(self.f1_w[i][j + self.Total_map] * self.vec_num[j] for j in range(self.Small_number)) +
-                        quicksum(self.f1_w[i][j + self.t_minus_number] * (1 - self.t_minus_s_[j]) for j in range(self.Total_map)) +
+                        quicksum(self.f1_w[i][j + self.t_minus_number] * self.t_minus_s_[j] for j in range(self.Total_map)) +
                         self.f1_b[i] - self.M_minus * (1 - z_h[i]), "c2_")
             m.addConstr(y_h[i] <= self.M_plus * z_h[i], "c3_")
 
@@ -90,8 +90,7 @@ class Gurobi:
         # cons. Miss,hit  Miss,fetch
         for i in range(self.Small_number):
             try:
-                m.addConstr(hit[i] == (1 - s_[i]) * s_[self.Small_number + self.map_[i]],
-                            "hit_")  # (m is not) and (M is) <hit>
+                m.addConstr(hit[i] == (1 - s_[i]) * s_[self.Small_number + self.map_[i]], "hit_")  # (m is not) and (M is) <hit>
                 # m.addConstr(hit[i] <= 1-s_[i], "hit_s")
                 # m.addConstr(hit[i] >= s_[self.Small_number + self.map_[i]] - s_[i], "hit_b")
 

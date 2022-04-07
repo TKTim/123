@@ -43,7 +43,8 @@ class Gurobi:
 
         # Set objective
         m.setObjective(quicksum(self.vec_num[i] * hit[i] * self.Reward_hit_positive for i in range(self.Small_number)) +
-                       quicksum(self.vec_num[i] * fetch[i] * self.Reward_fetch_positive for i in range(self.Small_number)) +
+                       quicksum(
+                           self.vec_num[i] * fetch[i] * self.Reward_fetch_positive for i in range(self.Small_number)) +
                        self.GAMMA * (quicksum(y_h[i] * self.f2_w[i] for i in range(self.hidden_dim)) + self.f2_b),
                        GRB.MINIMIZE)
 
@@ -69,12 +70,14 @@ class Gurobi:
 
             m.addConstr(y_h[i] >= quicksum(self.f1_w[i][j] * (1 - s_[j]) for j in range(self.Total_map)) +
                         quicksum(self.f1_w[i][j + self.Total_map] * self.vec_num[j] for j in range(self.Small_number)) +
-                        quicksum(self.f1_w[i][j + self.t_minus_number] * (1 - self.t_minus_s_[j]) for j in range(self.Total_map)) +
+                        quicksum(
+                            self.f1_w[i][j + self.t_minus_number] * self.t_minus_s_[j] for j in range(self.Total_map)) +
                         self.f1_b[i], "c1_")
 
             m.addConstr(y_h[i] <= quicksum(self.f1_w[i][j] * (1 - s_[j]) for j in range(self.Total_map)) +
                         quicksum(self.f1_w[i][j + self.Total_map] * self.vec_num[j] for j in range(self.Small_number)) +
-                        quicksum(self.f1_w[i][j + self.t_minus_number] * (1 - self.t_minus_s_[j]) for j in range(self.Total_map)) +
+                        quicksum(
+                            self.f1_w[i][j + self.t_minus_number] * self.t_minus_s_[j] for j in range(self.Total_map)) +
                         self.f1_b[i] - self.M_minus * (1 - z_h[i]), "c2_")
             m.addConstr(y_h[i] <= self.M_plus * z_h[i], "c3_")
 
@@ -90,8 +93,7 @@ class Gurobi:
         # cons. Miss,hit  Miss,fetch
         for i in range(self.Small_number):
             try:
-                # m.addConstr(hit[i] == (1 - s_[i]) * s_[self.Small_number + self.map_[i]], "hit_")  # (m is not) and
-                # (M is) <hit>
+                # m.addConstr(hit[i] == (1 - s_[i]) * s_[self.Small_number + self.map_[i]], "hit_")  # (m is not) and (M is) <hit>
                 m.addConstr(hit[i] <= 1-s_[i], "hit_s")
                 m.addConstr(hit[i] >= s_[self.Small_number + self.map_[i]] - s_[i], "hit_b")
 
@@ -99,7 +101,7 @@ class Gurobi:
                 m.addConstr(fetch[i] >= 1 - s_[i] - s_[self.Small_number + self.map_[i]], "fetch_")
             except:
                 print("Fail H F.")
-                sys.exit()
+                break
 
         # Download parameters
 
@@ -121,14 +123,13 @@ class Gurobi:
 
         # m.feasRelaxS(0, True, False, True)
         m.setParam('TimeLimit', 60)
-        m.setParam('OutputFlag', 0)
+        # m.setParam('OutputFlag', 0)
 
         m.optimize()
         # print(m.display())
         # m.write('mip1.lp')
 
         # Infeasible test
-
         if m.status == GRB.Status.INFEASIBLE:
             print('Optimization was stopped with status %d' % m.status)
             # do IIS, find infeasible constraints
@@ -137,21 +138,26 @@ class Gurobi:
                 if c.IISConstr:
                     print('%s' % c.constrName)
 
-        y_temp = []
+        y_temp = [0.0] * self.hidden_dim
+        action = [0.0] * self.Total_map
+        y_num = 0
         len_ = 0
-        action = []
         for v in m.getVars():
             # print('%s %g' % (v.varName, v.x))
             if v.varName[0] == "y":
-                y_temp.append(v.x)
-            if len_ < self.Total_map:
-                # print('%s %g' % (v.varName, v.x))
-                action.append(v.x)
+                y_temp[y_num] = float(v.x)
+                y_num += 1
+            if v.varName[0] == "s":
+                try:
+                    action[len_] = int(v.x)
+                except:
+                    action_out = self.t_minus_s_
+                    V_ = -1
+                    return action_out, V_
                 len_ += 1
 
-        print('Obj: %g' % m.objVal)
-        # print("y_temp:\n ", y_temp)
-        print("action: ", action)
+        # print('Obj: %g' % m.objVal)
+        print('y:  ', y_temp)
 
         # V_
         V_ = 0
@@ -159,9 +165,9 @@ class Gurobi:
             V_ += y_temp[i] * self.f2_w[i]
         V_ += self.f2_b
 
-        print("action_in: \n", action)
+        # print("action_in: \n", action)
         action_out = self.output_action(action)
-        print("action_out: \n", action_out)
+        # print("action_out: \n", action_out)
 
         return action_out, V_  # The update of t_minus_x is the same meaning of action
 
@@ -169,47 +175,22 @@ class Gurobi:
         action_out = [0.0] * len(action_in)
         count = 0
         download = 0
-        wait_line = []
-        d_full = False
-        for i in range(len(action_in)):  # -1, -2 ....
-
-            # Download process
-            if action_in[i] > 0.0:
-                # same state and action, evict automatically
-                if self.t_minus_s_[i] == 1.0:  # cache still
-                    # print("same")
-                    action_out[i] = 1.0
-                    count += 1
-                    continue
-                # print("Download")
-                if d_full is False:
-                    if i >= self.Small_number:  # it's a big map
-                        # print("big to check")
-                        action_out[i] = 1.0
-                        count += 1
-                        download += 1
-                    else:
-                        if action_in[i] > 0.5:
-                            # print("small to check")
-                            action_out[i] = 1.0
-                            count += 1
-                            download += 1
-                        else:
-                            wait_line.append([i, self.vec_num[i] * action_in[i]])
-            if count == self.B_size:
-                # print("action_out: ", action_out)
-                return action_out
-            if download == self.D_size:
-                d_full = True
-        # end of for
-        if count != self.B_size and len(wait_line) != 0:
-            # print("wait_line original:", wait_line)
-            wait_line.sort(key=lambda s: s[1], reverse=True)
-            # print("wait_line:", wait_line)
-            for i in range(len(wait_line)):
-                action_out[wait_line[i][0]] = 1.0
+        wait_line = [0]*self.B_size
+        wait_num = 0
+        for i in reversed(range(len(action_in))):  # -1, -2 ....
+            if self.t_minus_s_[i] != 1 and action_in[i] > 0.0 and download < self.D_size:
+                action_out[i] = 1
                 count += 1
                 download += 1
-                if count == self.B_size or download == self.D_size:
-                    return action_out
+            if self.t_minus_s_[i] == 1 and action_in[i] > 0.0:
+                wait_line[wait_num] = i
+                wait_num += 1
+
+        for i in wait_line:
+            if count < self.B_size:
+                action_out[i] = 1
+                count += 1
+            else:
+                return action_out
+
         return action_out

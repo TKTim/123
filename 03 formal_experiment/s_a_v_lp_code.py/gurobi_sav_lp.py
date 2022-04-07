@@ -123,7 +123,7 @@ class Gurobi:
 
         # m.feasRelaxS(0, True, False, True)
         m.setParam('TimeLimit', 60)
-        m.setParam('OutputFlag', 0)
+        # m.setParam('OutputFlag', 0)
 
         m.optimize()
         # print(m.display())
@@ -143,24 +143,22 @@ class Gurobi:
         action = [0.0] * self.Total_map
         y_num = 0
         len_ = 0
-        for v in m.getVars():
-            # print('%s %g' % (v.varName, v.x))
-            if v.varName[0] == "y":
-                y_temp[y_num] = float(v.x)
-                y_num += 1
-            if v.varName[0] == "s":
-                try:
+        try:
+            for v in m.getVars():
+                # print('%s %g' % (v.varName, v.x))
+                if v.varName[0] == "y":
+                    y_temp[y_num] = float(v.x)
+                    y_num += 1
+                if v.varName[0] == "s":
                     action[len_] = int(v.x)
-                except:
-                    print(int(v.x))
-                    print(len_)
-                    print("TM: ", self.Total_map)
-                    print(len(action))
-                    sys.exit()
-                len_ += 1
+                    len_ += 1
+        except:
+            print("self.t_minus_s_: \n", self.t_minus_s_)
+            print("self.vec_num: \n", self.vec_num)
+            sys.exit()
 
         # print('Obj: %g' % m.objVal)
-        print('y:  ', y_temp)
+        # print('y:  ', y_temp)
 
         # V_
         V_ = 0
@@ -170,7 +168,7 @@ class Gurobi:
 
         # print("action_in: \n", action)
         action_out = self.output_action(action)
-        # print("action_out: \n", action_out)
+        print("action_out: \n", action_out)
 
         return action_out, V_  # The update of t_minus_x is the same meaning of action
 

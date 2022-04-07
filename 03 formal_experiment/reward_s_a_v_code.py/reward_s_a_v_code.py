@@ -2,7 +2,7 @@ import sys
 import torch
 import torch.nn as nn
 import numpy as np
-import gurobi_sav_lp as gb
+import gurobi_sav as gb
 import logging
 import os
 import signal
@@ -31,26 +31,26 @@ timer_output_Action = 0
 start = time.time()
 
 # Map
-iter_ = 10
-Small_map_number = 376
-Big_map_number = 298
-Total_map_number = 674
-B_size = 15
-D_size = 3
+iter_ = 180
+Small_map_number = 2933
+Big_map_number = 1256
+Total_map_number = 4189
+B_size = 230
+D_size = 40
 
 # Hyper Parameters
 # The parameter interfere the training time
 BATCH_SIZE = 64
 MEMORY_CAPACITY = 320
 GAME_STEP_NUM = iter_ - 2  # (for the zero)
-EPOCHS = 1000
+EPOCHS = 5000
 LR = 0.01  # learning rate
 EPSILON = 0.8  # greedy policy
 decay_rate = 0.8
 GAMMA = 0.8  # reward discount
 TARGET_REPLACE_ITER = 100  # target update frequency
 # Network parameters
-input_dim = Total_map_number*2 + Small_map_number  # Q() = S{total} x V{small} x A{total}
+input_dim = Total_map_number*2 + Small_map_number  # Q() = S{total} x V{small}
 hidden_dim = 16
 output_dim = 1
 Reward_hit = 10.0
@@ -229,8 +229,10 @@ class Net(nn.Module):
         self.hidden_size = hidden_size
         self.output_dim = output_dim_in
         self.fc1 = torch.nn.Linear(self.input_size, self.hidden_size)
+        self.fc1.weight.data.normal_(0, 0.1)  # initialization
         self.relu = torch.nn.ReLU()
         self.fc2 = torch.nn.Linear(self.hidden_size, self.output_dim)
+        self.fc2.weight.data.normal_(0, 0.1)  # initialization
         self.to(device=cuda0)
 
     def forward(self, x):
@@ -360,13 +362,7 @@ class DQN(object):
                 else:
                     x_[i][j] = 0.0
 
-        y_ = b_s.clone()  # S bar
-        for i in range(len(y_)):
-            for j in range(N_S_A):
-                if y_[i][j] <= 0.5:
-                    y_[i][j] = 1.0
-                else:
-                    y_[i][j] = 0.0
+        y_ = b_s.clone()  # S
 
         vec_batch_ = []
         for i in range(BATCH_SIZE):
@@ -375,16 +371,6 @@ class DQN(object):
         vec_batch_ = torch.tensor(vec_batch_, dtype=torch.float32).to(device=cuda0)
 
         In_q_eval = torch.cat((x_, vec_batch_, y_), 1)  # A bar, V, S bar
-        '''
-        test_q = In_q_eval.cpu().detach().numpy().tolist()
-        print("In_q_eval \n", " :[ ", end="", file=py_out)
-        for i in test_q:
-            print("[ ", end="", file=py_out)
-            for j in i:
-                print(j, ", ", end="", file=py_out)
-            print(" ]", file=py_out)
-        print("]\n", end="", file=py_out)
-        '''
 
         # Working with network
         q_eval = self.eval_net(In_q_eval).to(device=cuda0)  # 16
@@ -497,11 +483,9 @@ if len(sys.argv) < 2:
     sys.exit()
 py_text = sys.argv[1]
 py_map = sys.argv[2]
-py_output = sys.argv[3]
 
 f = open(py_text, 'r')
 ptr_in = open(py_map, "r")
-py_out = open(py_output, "w+")
 
 '''
 # Map formation #
@@ -580,14 +564,13 @@ env = Environment(vec_num)
 # MEMORY_CAPACITY time of collecting exp,
 # epochs time of learning
 # MEMORY_CAPACITY*epochs times total
-
+num = 0
 print("Start exploration.")
 for i_episode in range(EPOCHS):
     env.reset()
     s = env.get_Start_state()
     # print("state: ", s)
     ep_r = 0
-    print("i_episode: ", i_episode, file=py_out)
     while True:
         # print(s)
         # Choose a random action on state s.
@@ -610,11 +593,17 @@ for i_episode in range(EPOCHS):
             loss = dqn.learn()
             log_.info('Ep: %s'  '| Ep_loss: %f', i_episode, loss)
             if done:
-                log_.info('Ep: %s'  '| Ep_r: %f', i_episode, round(ep_r, 2))
+                # log_.info('Ep: %s'  '| Ep_r: %f', i_episode, round(ep_r, 2))
+                if i_episode % 3 == 0 and i_episode != 0:
+                    torch.save(dqn.eval_net.state_dict(), 'saved/eval_network_' + str(num) + '.pt')
+                    # print('Save eval_network complete.')
+                    torch.save(dqn.target_net.state_dict(), 'saved/target_network_' + str(num) + '.pt')
+                    # print('Save target_network complete.')
+                    log_.info("Saved succeed", i_episode)
+                    num += 1
         if done:
-            print("epr: ", ep_r, file=py_out)
+            log_.info('Ep: %s'  '| Ep_r: %f', i_episode, round(ep_r, 2))
             break
-
         s = s_
 
     # EPSILON Decay
@@ -622,14 +611,5 @@ for i_episode in range(EPOCHS):
         if i_episode % 10:
             EPSILON = 1 - (1 - EPSILON) * decay_rate
 
-    # Save every 5 eps
-    if i_episode % 5 == 0 and i_episode != 0:
-        torch.save(dqn.eval_net.state_dict(), 'saved/eval_network.pt')
-        # print('Save eval_network complete.')
-        torch.save(dqn.target_net.state_dict(), 'saved/target_network.pt')
-        # print('Save target_network complete.')
-        log_.info("Episode: %s succeed", i_episode)
-
 end = time.time()
-
 log_.info("Total used time: {}".format(end - start))
