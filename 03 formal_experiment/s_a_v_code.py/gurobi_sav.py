@@ -23,7 +23,7 @@ class Gurobi:
         self.Reward_fetch_positive = Reward_fetch
         self.M = 0.5
         self.time_round = 0
-        self.t_minus_number = self.Total_map + self.Small_number
+        self.t_minus_number = Total_map+Small_number
 
     def MIP_formulation(self):
         # Create a new model

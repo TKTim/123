@@ -19,11 +19,12 @@ MUST READ:
 timer_output_Action = 0
 start = time.time()
 
-# Map
-iter_ = 29
-Small_map_number = 1547
-Big_map_number = 960
-Total_map_number = 2507
+iter_ = 10
+Small_map_number = 1010
+Big_map_number = 441
+Total_map_number = 1451
+B_size = 100
+D_size = 15
 
 # Hyper Parameters
 # The parameter interfere the training time
@@ -40,9 +41,7 @@ TARGET_REPLACE_ITER = 100 # target update frequency
 input_dim = Total_map_number  # Q() = S x A
 hidden_dim = 16
 output_dim = 1
-B_size = 15
-D_size = 3
-Reward_hit = 10
+Reward_hit = 10.0
 Reward_fetch = 20.0
 Game_step = 0
 N_S_A = input_dim
@@ -165,27 +164,22 @@ class Environment(object):
 # @staticmethod
 def choose_action(observation_state, vec_num_in):
     # input only one sample
-    if np.random.uniform() < EPSILON:  # Gurobi Solver
-        global Game_step
-        gurobi_func = gb.Gurobi(vec_num_in[Game_step],
-                                t_minus_s_=observation_state, B_size=B_size, D_size=D_size, Reward_hit=Reward_hit,
-                                Reward_fetch=Reward_fetch, Total_map=Total_map_number, Small_number=Small_map_number
-                                , hidden_dim=hidden_dim, map_=map_, GAMMA=GAMMA)
-        action = gurobi_func.MIP_formulation()
+    global Game_step
+    gurobi_func = gb.Gurobi(vec_num_in[Game_step],
+                            t_minus_s_=observation_state, B_size=B_size, D_size=D_size, Reward_hit=Reward_hit,
+                            Reward_fetch=Reward_fetch, Total_map=Total_map_number, Small_number=Small_map_number
+                            , hidden_dim=hidden_dim, map_=map_, GAMMA=GAMMA)
+    action = gurobi_func.MIP_formulation()
 
-        # if self.learn_step_counter % 10 == 0:
-        '''
-        print("vec_num:\n", vec_num_in[Game_step], file=py_out)
-        
-        print("Action \n", " :[ ", end="", file=py_out)
-        for i in action:
-            print(i, " ", end="", file=py_out)
-        print("]\n", end="", file=py_out)
-        '''
-
-    else:  # random
-        action = generate_rand_action(observation_state)
-
+    # if self.learn_step_counter % 10 == 0:
+    '''
+    print("vec_num:\n", vec_num_in[Game_step], file=py_out)
+    
+    print("Action \n", " :[ ", end="", file=py_out)
+    for i in action:
+        print(i, " ", end="", file=py_out)
+    print("]\n", end="", file=py_out)
+    '''
     return action
 
 # Initial log
@@ -205,11 +199,10 @@ if len(sys.argv) < 2:
     sys.exit()
 py_text = sys.argv[1]
 py_map = sys.argv[2]
-py_output = sys.argv[3]
 
 f = open(py_text, 'r')
 ptr_in = open(py_map, "r")
-py_out = open(py_output, "w+")
+
 
 '''
 # Map formation #
@@ -289,11 +282,17 @@ env = Environment(vec_num)
 # MEMORY_CAPACITY*epochs times total
 
 print("Start exploration.")
-for i_episode in range(EPOCHS):
+env.reset()
+s = env.get_Start_state()
+
+# s = np.zeros(N_S_A, dtype=float)
+ep_r = 0
+
+end_r = 0
+rand_iter = 10
+for i in range(rand_iter):
     env.reset()
     s = env.get_Start_state()
-
-    # s = np.zeros(N_S_A, dtype=float)
     ep_r = 0
     while True:
         # Choose a random action on state s.
@@ -306,10 +305,14 @@ for i_episode in range(EPOCHS):
         ep_r += r
 
         if done:
-            log_.info('Ep: %s'  '| Ep_r: %f', i_episode, round(ep_r, 2))
+            log_.info('Ep: %s'  '| Ep_r: %f', i, round(ep_r, 2))
             break
 
         s = s_
+    end_r += ep_r
+
+temp_ = end_r/rand_iter
+log_.info('Average Ep_r: %f', 0, round(temp_, 2))
 
 
 end = time.time()

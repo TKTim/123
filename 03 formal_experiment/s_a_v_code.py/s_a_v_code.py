@@ -370,7 +370,7 @@ class DQN(object):
 
         vec_batch_ = torch.tensor(vec_batch_, dtype=torch.float32).to(device=cuda0)
 
-        In_q_eval = torch.cat((x_, vec_batch_, y_), 1)  # A bar, V, S bar
+        In_q_eval = torch.cat((x_, vec_batch_, y_), 1)  # A bar, V, S
 
         # Working with network
         q_eval = self.eval_net(In_q_eval).to(device=cuda0)  # 16
@@ -576,11 +576,13 @@ for i_episode in range(EPOCHS):
         # Choose a random action on state s.
         # print("Game_step: ", Game_step, file=py_out)
         a = dqn.choose_action(s)  # time_round += 1
-        # take action
-        # done: The end.
-        # modify the reward
-        # store v[game_step]
-
+        print("S: \n")
+        for i in s:
+            print(i, end=" ")
+        print("A: \n")
+        for i in a:
+            print(i, end=" ")
+        print("\n End")
         g_s = Game_step
         s_, r, done = env.step(a)  # have to after anything about Game_step
         # print("r: ", r, file=py_out)

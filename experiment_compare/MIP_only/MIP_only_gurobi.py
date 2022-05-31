@@ -51,12 +51,12 @@ class Gurobi:
         # cons. Miss,hit  Miss,fetch
         for i in range(self.Small_number):
             try:
-                m.addConstr(hit[i] == (1 - s_[i]) * s_[self.Small_number + self.map_[i]], "hit_")  # (m is not) and (M is) <hit>
-                # m.addConstr(hit[i] <= 1-s_[i], "hit_s")
-                # m.addConstr(hit[i] >= s_[self.Small_number + self.map_[i]] - s_[i], "hit_b")
+                # m.addConstr(hit[i] == (1 - s_[i]) * s_[self.Small_number + self.map_[i]], "hit_")  # (m is not) and (M is) <hit>
+                m.addConstr(hit[i] <= 1-s_[i], "hit_s")
+                m.addConstr(hit[i] >= s_[self.Small_number + self.map_[i]] - s_[i], "hit_b")
 
-                m.addConstr(fetch[i] == (1 - s_[i]) * (1 - s_[self.Small_number + self.map_[i]]), "fetch_")
-                # m.addConstr(fetch[i] >= 1 - s_[i] - s_[self.Small_number + self.map_[i]], "fetch_")
+                # m.addConstr(fetch[i] == (1 - s_[i]) * (1 - s_[self.Small_number + self.map_[i]]), "fetch_")
+                m.addConstr(fetch[i] >= 1 - s_[i] - s_[self.Small_number + self.map_[i]], "fetch_")
             except:
                 print("Fail H F.")
                 sys.exit()

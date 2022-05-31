@@ -30,7 +30,7 @@ for i in range(5):
         m.addConstr((s_[i] == 1) >> (x_[i] == 0), name=re_v2_name)
     except:
         print("Fail")
-    #m.addConstr(hit_[i] == and_(s_[i], t[i]))
+    # m.addConstr(hit_[i] == and_(s_[i], t[i]))
 
 m.addConstr(quicksum(s_[i] for i in range(5)) <= 3)
 

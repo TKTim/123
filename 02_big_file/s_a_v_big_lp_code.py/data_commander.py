@@ -47,7 +47,7 @@ if len(sys.argv) < 2:
     sys.exit()
 py_text = sys.argv[1]  # map_collect.txt
 py_map = sys.argv[2]  # map.txt
-py_write = sys.argv[3]  # vec_num.txt
+py_write = sys.argv[3]  # d1_vec_num.txt
 
 ptr_in = open(py_text, "r")
 ptr_map = open(py_map, "r")

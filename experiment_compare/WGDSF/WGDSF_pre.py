@@ -21,21 +21,77 @@ def getReward(sorted_H, WTF_separated, vec_num):
     return r_
 
 
-map_num = 2161
-iter_num = 200
-car_total_num = 60
-require_total_map = 10
-B_size = 1000
-REWARD_MINUS = -15.0
+map_num = 2933
+iter_num = 10
+car_total_num = 50
+require_total_map = 15
+B_size = 300
+REWARD_MINUS = 20.0
 
 if len(sys.argv) < 2:
     print('no argument')
     sys.exit()
-py_text = sys.argv[1]
-py_vec = sys.argv[2]
+py_text = sys.argv[1]  # map_collect
+py_vec = sys.argv[2]  # vec_num
 
 ptr_in = open(py_text, "r")
 py_vec_text = open(py_vec, "r")
+
+'''
+
+Map_collect
+
+'''
+
+
+lines = (line.rstrip() for line in ptr_in.readlines())  # All lines including the blank ones. Skip first line.
+lines = (line for line in lines if line)  # Non-blank lines
+Start_load = False
+num_ = [[-1 for _ in range(require_total_map)] for _ in range(car_total_num)]
+WTF_separated = [[0.0 for _ in range(map_num)] for _ in range(iter_num)]
+H_ = [[0, 0.0] for _ in range(map_num)]  # [Number, value], Since we will use sort so, no need to confuse it.
+# Initial H_, give[0] the index of map.
+for i in range(map_num):
+    H_[i][0] = i
+
+car_num = 0
+iter_ = 0
+for line in lines:
+    pos = 0
+    temp = ""
+    # print(line)
+    for i in line:
+        if Start_load:
+            if i == "E":  # End of a iter
+                Start_load = False
+                car_num = 0
+                # print("This is ", iter_, " iterations.", file=ptr_out )
+                cal_popularity(num_, WTF_separated)
+                num_ = [[-1 for _ in range(require_total_map)] for _ in range(car_total_num)]
+                iter_ += 1
+                break
+            elif i == " ":
+                num_[car_num][pos] = int(temp)
+                pos += 1
+                temp = ""
+            elif i == "G":  # end of line
+                temp = ""
+                pos = 0
+            else:  # save the map number
+                temp += i
+        elif i == "S":
+            Start_load = True
+            car_num = -1
+            pos = 0
+            break
+        else:
+            continue
+    car_num += 1
+    pos = 0
+
+'''
+# vec_num #
+'''
 
 lines = (line.rstrip() for line in py_vec_text.readlines())  # All lines including the blank ones. Skip first line.
 lines = (line for line in lines if line)  # Non-blank lines
@@ -65,54 +121,6 @@ for line in lines:
             search_ = True
 
 py_vec_text.close()
-
-lines = (line.rstrip() for line in ptr_in.readlines())  # All lines including the blank ones. Skip first line.
-lines = (line for line in lines if line)  # Non-blank lines
-Start_load = False
-num_ = [[-1 for _ in range(require_total_map)] for _ in range(car_total_num)]
-WTF_separated = [[0.0 for _ in range(map_num)] for _ in range(iter_num)]
-H_ = [[0, 0.0] for _ in range(map_num)]  # [Number, value], Since we will use sort so, no need to confuse it.
-# Initial H_, give[0] the index of map.
-for i in range(map_num):
-    H_[i][0] = i
-
-# print(H_)
-
-
-car_num = 0
-iter_ = 0
-for line in lines:
-    pos = 0
-    temp = ""
-    # print(line)
-    for i in line:
-        if Start_load:
-            if i == "E":  # End of a iter
-                Start_load = False
-                car_num = 0
-                # print("This is ", iter_, " iterations.", file=ptr_out )
-                cal_popularity(num_, WTF_separated)
-                num_ = [[-1 for _ in range(10)] for _ in range(60)]
-                iter_ += 1
-                break
-            elif i == " ":
-                num_[car_num][pos] = int(temp)
-                pos += 1
-                temp = ""
-            elif i == "G":  # end of line
-                temp = ""
-                pos = 0
-            else:  # save the map number
-                temp += i
-        elif i == "S":
-            Start_load = True
-            car_num = -1
-            pos = 0
-            break
-        else:
-            continue
-    car_num += 1
-    pos = 0
 # print(WTF_separated)
 min_H = 0.0
 WDT = 1

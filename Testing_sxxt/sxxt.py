@@ -1,11 +1,11 @@
-import torch as t
-import os
+import numpy as np
+import random
 
-i = 200
-loc_temp = int(i / 50)
-line_temp = int(i / 100)
-loc = int(i - 50 * loc_temp)
-map_loc = int(loc / 2)
-ans = int(map_loc + 25 * line_temp)
+formal_list = [[0 for _ in range(2)] for _ in range(10)]
+for i in range(10):
+    formal_list[i][1] = random.randint(0,10)
+print(formal_list)
 
-print(ans)
+a_ = sorted(formal_list, key=lambda s: s[1])
+
+print(a_)

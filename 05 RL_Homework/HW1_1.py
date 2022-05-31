@@ -3,8 +3,8 @@ import torch.nn as nn
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-os.environ["KMP_DUPLICATE_LIB_OK"]  =  "TRUE"
 
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
 class bandit_setting(object):
@@ -34,8 +34,8 @@ class Agent(object):
         self.timeStep = 0
         self.lastAction = 0
 
-        self.Action_times = np.zeros(self.number_arms)  # number of times a taken prior to t
-        self.Sum_rewards = np.zeros(self.number_arms)  # Sum of rewards when a taken prior to t
+        self.Action_times = np.zeros(self.number_arms)  # number of times Action(a) taken before to t
+        self.Sum_rewards = np.zeros(self.number_arms)  # Sum of rewards when a taken before to t
         self.Q_t_a = np.zeros(self.number_arms)  # Q_t_a is the estimate value by averaging
 
     def choose_action(self):
@@ -61,8 +61,8 @@ class Agent(object):
         self.Action_times[self.lastAction] += 1
         self.Sum_rewards[self.lastAction] += reward
 
+        # Q_t_a calculate method
         self.Q_t_a[self.lastAction] = self.Sum_rewards[self.lastAction] / self.Action_times[self.lastAction]
-
         self.timeStep += 1
 
     def reset(self):
@@ -110,9 +110,8 @@ for i in range(iter_):
             optim_greedy[j] += 1
 
 for i in range(time_steps):
-    optim_optimistic[i] = optim_optimistic[i]/iter_
+    optim_optimistic[i] = optim_optimistic[i] / iter_
     optim_greedy[i] = optim_greedy[i] / iter_
-
 
 time_array = np.arange(0, time_steps, 1)
 
@@ -123,9 +122,4 @@ plt.ylabel("% Optimal action", fontsize=13)
 plt.legend(["optimistic_agent", "greedy_agent"], loc=4)
 plt.show()
 
-
 # end of iter_
-
-
-
-
